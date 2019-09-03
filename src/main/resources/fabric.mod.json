@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "id": "libmultiblock",
+  "version": "$version",
+
+  "name": "LibMultiblock",
+  "icon": "assets/libmultiblock/icon.png",
+
+  "description": "Libraries tof making various kinds of multiblocks",
+  "licence": "MIT",
+  "contact": {
+    "sources": "https://github.com/CottonMC/LibMultiblock"
+  },
+  "environment": "*",
+  "depends": {
+    "fabricloader": ">=0.4.0"
+  },
+  "custom": {
+    "modmenu:api": true
+  }
+}
