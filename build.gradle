@@ -30,7 +30,7 @@ if(rootProject.file('private.gradle').exists()) { //Publishing details
 
 archivesBaseName = "libmultiblock"
 group = "io.github.cottonmc"
-version = "0.1.0+1.14.4"
+version = "0.1.1+1.14.4"
 
 minecraft {
 }

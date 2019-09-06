@@ -9,14 +9,6 @@ import net.minecraft.world.World;
  * An interface for companion blocks of a big block.
  */
 public interface BigBlockCompanion {
-	/**
-	 * @param world The world the big block is in.
-	 * @param controllerPos The position of the controller.
-	 * @param controllerState The state of the controller.
-	 * @param offsetToController The vector from this companion to the controller.
-	 * @return The block state to put down.
-	 */
-	BlockState getCompanionState(World world, BlockPos controllerPos, BlockState controllerState, Vec3i offsetToController);
 
 	/**
 	 * Give the newly-set-up companion block information about itself, so that it can save it if needed.

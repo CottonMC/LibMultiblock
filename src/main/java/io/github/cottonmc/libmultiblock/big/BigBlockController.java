@@ -11,8 +11,6 @@ import net.minecraft.world.ViewableWorld;
 import net.minecraft.world.World;
 
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * The core block within a construct like a door or bed, which acts as one block that takes up multiple blockspaces.
@@ -29,6 +27,15 @@ public abstract class BigBlockController extends Block {
 	public abstract Vec3i[] getCompanionOffsets();
 
 	/**
+	 * @param world The world the big block is in.
+	 * @param controllerPos The position of the controller.
+	 * @param controllerState The state of the controller.
+	 * @param offsetToCompanion The vector from this controller to the companion, ignoring rotation (always for when the big block is facing north).
+	 * @return The block state to put down.
+	 */
+	public abstract BlockState getCompanionState(World world, BlockPos controllerPos, BlockState controllerState, Vec3i offsetToCompanion);
+
+	/**
 	 * @return The property used to define this block's direction, or null.
 	 */
 	@Nullable
@@ -43,10 +50,11 @@ public abstract class BigBlockController extends Block {
 	public void onBlockAdded(BlockState state, World world, BlockPos pos, BlockState newState, boolean boolean_1) {
 		super.onBlockAdded(state, world, pos, newState, boolean_1);
 		Direction dir = getFacingProperty() == null? Direction.NORTH : state.get(getFacingProperty());
-		for (Vec3i offset : getRotatedVectors(dir)) {
+		for (Vec3i vec : getCompanionOffsets()) {
+			Vec3i offset = getRotatedVector(vec, dir);
 			Vec3i opposite = new Vec3i(offset.getX() * -1, offset.getY() * -1, offset.getZ() * -1);
 			BlockPos toAdd = pos.add(offset);
-			world.setBlockState(toAdd, getCompanion().getCompanionState(world, pos, state, opposite));
+			world.setBlockState(toAdd, getCompanionState(world, pos, state, vec));
 			getCompanion().configure(world, pos, state, opposite);
 		}
 	}
@@ -55,7 +63,8 @@ public abstract class BigBlockController extends Block {
 	public void onBlockRemoved(BlockState state, World world, BlockPos pos, BlockState newState, boolean boolean_1) {
 		super.onBlockRemoved(state, world, pos, newState, boolean_1);
 		Direction dir = getFacingProperty() == null? Direction.NORTH : state.get(getFacingProperty());
-		for (Vec3i offset : getRotatedVectors(dir)) {
+		for (Vec3i vec : getCompanionOffsets()) {
+			Vec3i offset = getRotatedVector(vec, dir);
 			BlockPos toRemove = pos.add(offset);
 			world.breakBlock(toRemove, false);
 		}
@@ -64,9 +73,10 @@ public abstract class BigBlockController extends Block {
 	@Override
 	public boolean canPlaceAt(BlockState state, ViewableWorld world, BlockPos pos) {
 		Direction dir = getFacingProperty() == null? Direction.NORTH : state.get(getFacingProperty());
-		for (Vec3i offset : getRotatedVectors(dir)) {
-			BlockPos blocker = pos.add(offset);
-			if (!world.getBlockState(blocker).getMaterial().isReplaceable()) return false;
+		for (Vec3i vec : getCompanionOffsets()) {
+			Vec3i offset = getRotatedVector(vec, dir);
+			BlockPos companion = pos.add(offset);
+			if (!world.getBlockState(companion).getMaterial().isReplaceable()) return false;
 		}
 		return true;
 	}
@@ -76,44 +86,39 @@ public abstract class BigBlockController extends Block {
 		return PistonBehavior.BLOCK;
 	}
 
-	Vec3i[] getRotatedVectors(Direction dir) {
-		if (dir == Direction.NORTH) return getCompanionOffsets();
-		List<Vec3i> ret = new ArrayList<>();
+	public static Vec3i getRotatedVector(Vec3i vec, Direction dir) {
+		if (dir == Direction.NORTH) return vec;
 		if (dir.getAxis() == Direction.Axis.Y) {
 			//rotate around the X axis
-			for (Vec3i vec : getCompanionOffsets()) {
-				int y = vec.getY();
-				int z = vec.getZ();
-				int angle = dir == Direction.UP? 90 : 270;
+			int y = vec.getY();
+			int z = vec.getZ();
+			int angle = dir == Direction.UP? 90 : 270;
 
-				angle *= Math.PI/180.0; //Convert amount to radians
+			angle *= Math.PI/180.0; //Convert amount to radians
 
-				double theta = Math.atan2(y, z);
-				double r = Math.sqrt(z*z+y*y);
+			double theta = Math.atan2(y, z);
+			double r = Math.sqrt(z*z+y*y);
 
-				z = (int)(r * Math.cos(theta-angle));
-				y = (int)(r * Math.sin(theta-angle));
+			z = (int)(r * Math.cos(theta-angle));
+			y = (int)(r * Math.sin(theta-angle));
 
-				ret.add(new Vec3i(vec.getX(), y, z));
-			}
-		} else {
-			//rotate around the Y axis
-			for (Vec3i vec : getCompanionOffsets()) {
-				int x = vec.getX();
-				int z = vec.getZ();
-				int angle = dir == Direction.EAST? 90 : dir == Direction.SOUTH? 180 : 270;
-
-				angle *= Math.PI/180.0; //Convert amount to radians
-
-				double theta = Math.atan2(x, z);
-				double r = Math.sqrt(z*z+x*x);
-
-				z = (int)(r * Math.cos(theta-angle));
-				x = (int)(r * Math.sin(theta-angle));
-
-				ret.add(new Vec3i(x, vec.getY(), z));
-			}
+			return new Vec3i(vec.getX(), y, z);
 		}
-		return ret.toArray(new Vec3i[0]);
+		else {
+			//rotate around the Y axis
+			int x = vec.getX();
+			int z = vec.getZ();
+			int angle = dir == Direction.EAST? 90 : dir == Direction.SOUTH? 180 : 270;
+
+			angle *= Math.PI/180.0; //Convert amount to radians
+
+			double theta = Math.atan2(x, z);
+			double r = Math.sqrt(z*z+x*x);
+
+			z = (int)(r * Math.cos(theta-angle));
+			x = (int)(r * Math.sin(theta-angle));
+
+			return new Vec3i(x, vec.getY(), z);
+		}
 	}
 }
